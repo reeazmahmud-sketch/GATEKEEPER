@@ -68,3 +68,51 @@ Checks for entry points in this order:
 ### Helper Scripts (One-off, for Terminator-Integrator project)
 - `refactor_integrator.py` - Updates Package.swift and refactors ScriptController
 - `fix_shared_file.py` - Creates ExecuteRequest.swift in Shared module
+
+## MANDATORY: Logging & Date Rules
+
+### Always Use Dates
+- **Date Format:** MM/DD/YYYY (USA format) - Example: `01/21/2026`
+- Add dates to ALL files you create (in header comments)
+- Add "Created:" and "Last Modified:" to every file
+
+### Always Create Log Files
+After completing any significant work, create a log file at:
+```
+/Users/reeazmahmud/Desktop/CLI-Terminal/ClaudeCode-User/
+```
+
+### Log File Naming Convention
+```
+[WHAT_WAS_FIXED]_[DATE].md
+```
+Examples:
+- `TERMINAL_ZSHRC_MODULAR_FIX_01_21_2026.md`
+- `TERMINATOR_STARTUP_ERROR_FIX_01_22_2026.md`
+- `CPU_MEMORY_CLEANUP_01_23_2026.md`
+
+**DO NOT** name files generically like "SESSION_LOG" or "CHANGES"
+
+### What to Include in Log Files
+1. **Quick Summary** - What was fixed (bullet points)
+2. **Problems Found** - What was wrong, explain like teaching a beginner
+3. **Root Cause** - Why it happened
+4. **The Fix** - Exact commands/code used, with explanations
+5. **Files Created/Changed** - Full list with purposes
+6. **Test Results** - Did it work? Show the test and result
+7. **If It Happens Again** - Step-by-step instructions to fix it
+8. **Commands Reference** - All useful commands in tables
+
+### Write for Beginners
+- Explain like teaching a 10-year-old
+- Show the exact command, then explain what each part means
+- Include "What this means" sections
+- Use tables for quick reference
+- Add troubleshooting steps
+
+### Test Everything
+After making changes:
+1. Test each feature
+2. Document test results (PASS/FAIL)
+3. If FAIL, document the error and how you fixed it
+4. Add all test results to the log file

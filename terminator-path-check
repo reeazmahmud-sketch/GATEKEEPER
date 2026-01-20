@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import sys
+import os
+
+# Add the project root to sys.path explicitly, just like the real app likely does
+project_root = "/Users/reeazmahmud/Desktop/Terminator-Project"
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+print(f"--- Checking import from {project_root} ---")
+
+try:
+    import core.terminator_multi_agent_orchestrator as tmao
+    print(f"✅ Successfully imported module.")
+    print(f"📍 File location: {tmao.__file__}")
+    
+    if hasattr(tmao, 'TaskPriority'):
+        print("✅ TaskPriority is present in the module.")
+        print(f"Type: {tmao.TaskPriority}")
+    else:
+        print("❌ TaskPriority is MISSING from the imported module.")
+        print("Available attributes:")
+        print(dir(tmao))
+        
+except ImportError as e:
+    print(f"❌ ImportError: {e}")
+except Exception as e:
+    print(f"❌ An error occurred: {e}")

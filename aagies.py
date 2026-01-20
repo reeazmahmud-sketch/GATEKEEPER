@@ -18,8 +18,9 @@ import sys
 import subprocess
 import shutil
 import logging
+import json
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -32,10 +33,71 @@ C_RED = "\033[91m"
 C_YELLOW = "\033[93m"
 C_CYAN = "\033[96m"
 
+class JsonFile:
+    """Helper class for manipulating JSON files."""
+    def __init__(self, path: Path):
+        self.path = path
+        if not self.path.exists():
+            self.data = {}
+        else:
+            with open(self.path) as f:
+                self.data = json.load(f)
+
+    def get(self, key, default=None):
+        return self.data.get(key, default)
+
+    def set(self, key, value):
+        self.data[key] = value
+
+    def save(self):
+        with open(self.path, "w") as f:
+            json.dump(self.data, f, indent=2)
+
 class AagiesDoctor:
     def __init__(self):
         self.cwd = Path.cwd()
         self.issues = []
+        self.config_path = Path.home() / ".aagies" / "config.json"
+        self.config_path.parent.mkdir(exist_ok=True)
+        self.config = self.get_config()
+
+    def get_config(self) -> Dict:
+        """Get config from ~/.aagies/config.json"""
+        if not self.config_path.exists():
+            return {"project_dirs": [str(self.cwd)]}
+        with open(self.config_path) as f:
+            return json.load(f)
+
+    def save_config(self):
+        """Save config to ~/.aagies/config.json"""
+        with open(self.config_path, "w") as f:
+            json.dump(self.config, f, indent=2)
+
+    def get_project_directories(self) -> List[Path]:
+        """Get project directories from config."""
+        return [Path(d) for d in self.config.get("project_dirs", [])]
+
+    def add_project_directory(self, new_dir: str):
+        """Add a project directory to the config."""
+        dirs = self.config.get("project_dirs", [])
+        if new_dir not in dirs:
+            dirs.append(new_dir)
+            self.config["project_dirs"] = dirs
+            self.save_config()
+            self.log(f"Added '{new_dir}' to project directories.", C_GREEN)
+        else:
+            self.log(f"'{new_dir}' is already in the project directories.", C_YELLOW)
+
+    def remove_project_directory(self, directory: str):
+        """Remove a project directory from the config."""
+        dirs = self.config.get("project_dirs", [])
+        if directory in dirs:
+            dirs.remove(directory)
+            self.config["project_dirs"] = dirs
+            self.save_config()
+            self.log(f"Removed '{directory}' from project directories.", C_GREEN)
+        else:
+            self.log(f"'{directory}' is not in the project directories.", C_YELLOW)
 
     def log(self, msg, color=C_RESET):
         print(f"{color}{msg}{C_RESET}")
@@ -44,6 +106,135 @@ class AagiesDoctor:
         """Strict Protocol: Ask user for authorization."""
         response = input(f"\n{C_YELLOW}⚠️  AAGIES: {question} (y/n): {C_RESET}").strip().lower()
         return response == 'y'
+
+    def discover_projects(self, directories: List[Path]) -> List[Dict[str, str]]:
+        """Scans for projects in the given directories."""
+        projects = []
+        for directory in directories:
+            if (directory / "package.json").exists():
+                projects.append({"type": "Node.js", "path": directory})
+            if (directory / "requirements.txt").exists():
+                projects.append({"type": "Python", "path": directory})
+            if (directory / "pyproject.toml").exists():
+                projects.append({"type": "Python", "path": directory})
+        return projects
+
+    def check_python_installed(self) -> bool:
+        """Check if Python 3 is installed."""
+        return shutil.which("python3") is not None
+
+    def check_node_installed(self) -> bool:
+        """Check if Node.js is installed."""
+        return shutil.which("node") is not None
+
+    def install_dependencies(self, project_type: str):
+        """Install dependencies for a given project type."""
+        if project_type == "Node.js":
+            if not self.check_node_installed():
+                self.log("Node.js is not installed. Please install it first.", C_RED)
+                # Offer to install it
+                if self.ask_permission("Install Node.js using Homebrew?"):
+                    subprocess.run(["brew", "install", "node"], check=True)
+                else:
+                    return
+            self.log("Installing Node.js dependencies...", C_CYAN)
+            subprocess.run(["npm", "install"], check=True)
+            self.log("✅ Dependencies installed.", C_GREEN)
+        elif project_type == "Python":
+            if not self.check_python_installed():
+                self.log("Python 3 is not installed. Please install it first.", C_RED)
+                # Offer to install it
+                if self.ask_permission("Install Python 3 using Homebrew?"):
+                    subprocess.run(["brew", "install", "python"], check=True)
+                else:
+                    return
+            self.log("Installing Python dependencies...", C_CYAN)
+            subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], check=True)
+            self.log("✅ Dependencies installed.", C_GREEN)
+
+    def interactive_project_scan(self):
+        """Interactive UI for project selection and creation."""
+        self.log("Looking for existing projects in configured directories...", C_CYAN)
+        project_dirs = self.get_project_directories()
+        projects = self.discover_projects(project_dirs)
+
+        if projects:
+            self.log("Found the following projects:", C_GREEN)
+            for i, p in enumerate(projects):
+                self.log(f"  {i+1}. {p['type']} project at {p['path']}")
+            
+            choice = input("\nSelect a project to manage (or 'c' to create a new one): ")
+            if choice.lower() == 'c':
+                self.create_new_project()
+                return
+
+            try:
+                project_index = int(choice) - 1
+                if 0 <= project_index < len(projects):
+                    project = projects[project_index]
+                    if self.ask_permission(f"Install dependencies for this {project['type']} project?"):
+                        # Change directory to the project path before installing dependencies
+                        os.chdir(project['path'])
+                        self.install_dependencies(project['type'])
+                else:
+                    self.log("Invalid selection.", C_RED)
+            except ValueError:
+                self.log("Invalid input.", C_RED)
+        else:
+            self.log("No existing projects found in configured directories.", C_YELLOW)
+            if self.ask_permission("Create a new project?"):
+                self.create_new_project()
+
+    def create_new_project(self):
+        """Guides user through creating a new project."""
+        project_dirs = self.get_project_directories()
+        self.log("Available project directories:", C_CYAN)
+        for i, d in enumerate(project_dirs):
+            self.log(f"  {i+1}. {d}")
+        
+        dir_choice = input("Select a directory to create the project in (or 'a' to add a new one): ")
+        if dir_choice.lower() == 'a':
+            new_dir = input("Enter the full path of the new directory: ")
+            self.add_project_directory(new_dir)
+            project_dir = Path(new_dir)
+        else:
+            try:
+                dir_index = int(dir_choice) - 1
+                if 0 <= dir_index < len(project_dirs):
+                    project_dir = project_dirs[dir_index]
+                else:
+                    self.log("Invalid selection.", C_RED)
+                    return
+            except ValueError:
+                self.log("Invalid input.", C_RED)
+                return
+
+        project_type = input("Select project type (Python/Node.js): ").strip().lower()
+        project_name = input("Enter project name: ").strip()
+        project_path = project_dir / project_name
+
+        if project_path.exists():
+            self.log("Directory already exists.", C_RED)
+            return
+
+        project_path.mkdir()
+        self.log(f"Created project directory: {project_path}", C_GREEN)
+
+        if "python" in project_type:
+            (project_path / "requirements.txt").touch()
+            (project_path / "main.py").touch()
+            self.log("Created requirements.txt and main.py", C_GREEN)
+        elif "node" in project_type:
+            package_json = JsonFile(project_path / "package.json")
+            package_json.set("name", project_name)
+            package_json.set("version", "1.0.0")
+            package_json.set("description", "")
+            package_json.set("main", "index.js")
+            package_json.save()
+            (project_path / "index.js").touch()
+            self.log("Created package.json and index.js", C_GREEN)
+        else:
+            self.log("Unknown project type.", C_RED)
 
     # --- DIAGNOSTICS ---
 
@@ -215,14 +406,21 @@ def main():
     
     if len(sys.argv) > 1:
         if sys.argv[1] == "--start":
-            # Auto-Start Mode
             doctor.auto_start()
+        elif sys.argv[1] == "add-dir":
+            if len(sys.argv) > 2:
+                doctor.add_project_directory(sys.argv[2])
+            else:
+                doctor.log("Please provide a directory to add.", C_RED)
+        elif sys.argv[1] == "remove-dir":
+            if len(sys.argv) > 2:
+                doctor.remove_project_directory(sys.argv[2])
+            else:
+                doctor.log("Please provide a directory to remove.", C_RED)
         else:
-            # Wrapper Mode: aagies <cmd>
             doctor.run_protected(sys.argv[1:])
     else:
-        # Scan Mode: aagies
-        doctor.run_scan()
+        doctor.interactive_project_scan()
 
 if __name__ == "__main__":
     main()

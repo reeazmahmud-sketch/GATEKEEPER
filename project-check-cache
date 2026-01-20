@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+import os
+
+projects = [
+    "/Users/reeazmahmud/Desktop/AAGIES-Core",
+    "/Users/reeazmahmud/Desktop/Aegis-Core",
+    "/Users/reeazmahmud/Desktop/Terminator-Project"
+]
+
+patterns = [
+    "__pycache__",
+    ".pyc",
+    ".DS_Store",
+    ".egg-info",
+    ".pytest_cache"
+]
+
+def check_cache():
+    for project in projects:
+        if not os.path.exists(project):
+            print(f"Skipping: {project} (not found)")
+            continue
+            
+        print(f"\n--- Checking {project} ---")
+        found = False
+        for root, dirs, files in os.walk(project):
+            # Check directories
+            for d in dirs:
+                if any(p in d for p in patterns):
+                    print(f"[DIR]  {os.path.join(root, d)}")
+                    found = True
+            
+            # Check files
+            for f in files:
+                if any(p in f for p in patterns) or f.endswith(".pyc"):
+                    print(f"[FILE] {os.path.join(root, f)}")
+                    found = True
+        
+        if not found:
+            print("No cache or temporary files found.")
+
+if __name__ == "__main__":
+    check_cache()

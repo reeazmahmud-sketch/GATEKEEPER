@@ -1,11 +1,11 @@
 # AAGIES (Autonomous Error Guard & Intelligent Self-healing)
 =========================================================
 
-Aagies is a universal self-healing and protection system designed to ensure your projects remain functional even if files are missing or systems crash.
+AAGIES is a universal self-healing and protection system designed to ensure your projects remain functional even if files are missing or systems crash.
 
 ## 🚀 Quick Start
 
-To use Aagies, simply use the single-word command in any project directory:
+To use AAGIES, simply use the single-word command in any project directory:
 
 ```bash
 aagies-start
@@ -24,7 +24,7 @@ aagies-start
 
 If the alias is not active, run:
 ```bash
-bash ~/Desktop/Aegis-Core/install_aagies.sh
+bash ~/Desktop/AAGIES-Core/install_aagies.sh
 source ~/.zshrc
 ```
 

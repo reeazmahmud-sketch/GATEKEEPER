@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import os
+import shutil
+import datetime
+
+target_dirs = [
+    "/Users/reeazmahmud/Desktop/Terminator-Project",
+    "/Users/reeazmahmud/Desktop/Terminator-Project/core"
+]
+
+def safe_refresh():
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    for d in target_dirs:
+        pycache = os.path.join(d, "__pycache__")
+        if os.path.exists(pycache):
+            backup_path = pycache + "_backup_" + timestamp
+            print(f"Moving {pycache} to {backup_path}")
+            try:
+                shutil.move(pycache, backup_path)
+                print(f"✅ Isolated cache in {os.path.basename(d)}")
+            except Exception as e:
+                print(f"❌ Could not move {pycache}: {e}")
+        else:
+            print(f"ℹ️ No __pycache__ found in {d}")
+
+if __name__ == "__main__":
+    safe_refresh()

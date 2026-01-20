@@ -1,0 +1,10 @@
+--- SESSION START: 2026-01-18 ---
+Task: Migrate and Fix AAGIES environment
+Status: In Progress
+Details:
+- Project renamed from Aegis-Core to AAGIES-Core.
+- Preferred naming logic: kebab-case, no extensions for tools (e.g., 'terminator-fix').
+- 'terminator-fix' has been migrated to AAGIES-Core and executed.
+- System still reporting 'TaskPriority' exists in the external Terminator-Project, but import errors were previously observed.
+- Environment check: Python 3.14 virtualenv active.
+- Shell command execution (run_shell_command) is still intermittently restricted/rejected.

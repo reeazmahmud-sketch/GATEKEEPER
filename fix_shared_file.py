@@ -1,4 +1,3 @@
-import os
 
 content = """import Vapor
 

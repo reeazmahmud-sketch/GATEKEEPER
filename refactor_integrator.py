@@ -1,4 +1,3 @@
-import os
 
 # Update Package.swift
 package_swift_content = """// swift-tools-version:5.9

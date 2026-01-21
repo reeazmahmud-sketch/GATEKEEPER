@@ -1,5 +1,4 @@
 import subprocess
-import datetime
 
 log_path = "/Users/reeazmahmud/Desktop/BengaliAI/Gemini-CLI/GEMINI_LOG_2026_01_18.txt"
 

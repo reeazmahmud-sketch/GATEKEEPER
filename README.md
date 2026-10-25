@@ -1,4 +1,4 @@
-# AAGIES (Autonomous Error Guard & Intelligent Self-healing)
+# GATEKEEPER (Autonomous Error Guard & Intelligent Self-healing)
 =========================================================
 
 AAGIES is a universal self-healing and protection system designed to ensure your projects remain functional even if files are missing or systems crash.
